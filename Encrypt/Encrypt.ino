@@ -4,21 +4,11 @@
 
 */
 #include "structs.h"
+#include "functions.h"
 
 pub_t pub;
 pri_t pri;
-
-uint32_t myPow(uint32_t b, uint32_t p)
-{
-  uint32_t x = 1;
-  
-  for(int i = 0; i < p; i++)
-  {
-    x = b * x;
-  }
-    
-  return x;
-}
+char *fpk;
 
 void setup()
 {
@@ -30,46 +20,40 @@ void setup()
   pub.p = 37;
   pub.g = 5;
   
-  pri.a = 12;
+  //pri.a = 12; // Now im actually going to use a random seed to generate the session random key
+  randomSeed(analogRead(0));
+  
+  pri.a = random(2, 254);
+  
   pub.A = myPow(pub.g,pri.a) % pub.p;
+  
+  print_variable("Public Key",&pub.A);
+  
+  fpk = read_line("Input Foreign Public Key");
+  pub.B = atoi(fpk);
+  Serial.print("\n");
+  
+  pri.s = myPow(pub.B,pri.a) % pub.p;
 }
 
-int16_t key = 100;
+//uint32_t key = 100;
+uint32_t modulo = 256;
 
 void loop()
 {
-  Serial.print("Public P: ");
-  Serial.print(pub.p, HEX);
-  Serial.print(" - ");
-  Serial.print(pub.p, DEC);
-  Serial.print(" - ");
-  Serial.println(pub.p, BIN);
-  
-  Serial.print("Public G: ");
-  Serial.print(pub.g, HEX);
-  Serial.print(" - ");
-  Serial.print(pub.g, DEC);
-  Serial.print(" - ");
-  Serial.println(pub.g, BIN);
-  
-  Serial.print("Shared key: ");
-  Serial.print(pub.A, HEX);
-  Serial.print(" - ");
-  Serial.print(pub.A, DEC);
-  Serial.print(" - ");
-  Serial.println(pub.A, BIN);
-  
-  Serial.print("\n");
-  delay(1000);
+//  print_variable("Private key pri.a", &pri.a);
+//  print_variable("Shared key pub.A", &pub.A);
+//  print_variable("Shared key pub.B", &pub.B);
+//  print_variable("Private Shared Key pri.s", &pri.s);
   
   // read from port 3
   if(Serial3.available())
   {
     int16_t inByte = Serial3.read();
     
-    int16_t decByte = (inByte - key)%256;
+    unprotect(&inByte);
     
-    Serial.write(decByte);
+    Serial.write(inByte);
   }
   
   // read from serial moniter
@@ -77,9 +61,9 @@ void loop()
   {
     int16_t inByte = Serial.read();
     
-    int16_t encByte = (inByte + key)%256;
+    protect(&inbyte);
     
-    Serial3.write(encByte);
+    Serial3.write(inbyte);
   }
 }
 
