@@ -3,28 +3,14 @@
 
 #include "Arduino.h"
 
-uint32_t myPow(uint32_t b, uint32_t p)
+uint16_t pow_mod(uint16_t b, uint16_t p, uint16_t n)
 {
   uint32_t x = 1;
   
-  for(int i = 0; i < p; i++)
+  for(uint32_t i = 0; i < p; i++)
   {
-    x = b * x;
+    x = ((b % n) * (x % n)) % n; // as Mod[b*x,n] == Mod[Mod[b,n]*Mod[x,n],n] == Mod[Mod[b*x,n],n];
   }
-    
-  return x;
-}
-
-uint32_t pow_mod(uint32_t b, uint32_t p, uint32_t n)
-{
-  uint32_t x = 1;
-  
-  for(int i = 0; i < p; i++)
-  {
-    x = b * x;
-  }
-  
-  x = x % n;
     
   return x;
 }
@@ -36,60 +22,36 @@ char *read_line(char text[] = "Waiting for input")
   int i = 0;
   
   Serial.print(text);
-  Serial.println(": ");
+  Serial.print(": ");
   
-  for(;;)
+  while(i+1<=bufferlength)
   {
     int8_t input = Serial.read();
     if(input == -1)
     {
-      // Nothing to see here...
+      // Nothing to see here... Serial buffer is empty
     }
     else
     {
       // We got a value! Process it.
+      buffer[i+1] = '\0'; // Ensure that following char is null terminated
+      if(input == '\n') // Is there a new line character?
+        break; // If so, break from while loop
       
-      buffer[i+1] = '\0';
-      if(input == '\n')
-        break;
-      
-      buffer[i] = input;
-      i++;
-      
-      if(i == bufferlength - 1)
-        break; // Buffer full
-      
+      buffer[i] = input; // Store input into buffer
+      i++; // Increment byte character
     }
   }
   
   return buffer;
 }
 
-//void protect(uint32_t *input, uint32_t *key = &pub.B, boolean mode = 1)
-void protect(uint32_t *input, bool mode = 1)
+void cipher(uint16_t *input, uint16_t key)
 {
-  int modulo = modulo;
-  pri.s = pri.s;
-  uint32_t *key = &pri.s;
-  if(mode)
-  {
-    // Encrypting....
-    //*input = (input + key)%256;
-    *input = (*input + *key)%modulo;
-  }
-  else
-  {
-    // Decrypting....
-    ///*input = (input - key)%256;
-    *input = (*input - *key)%modulo;
-  }
-}
-void unprotect(uint32_t *input)
-{
-  protect(input, 0);
+  *input = (*input ^ key);
 }
 
-void print_variable(char name[], uint32_t *var)
+void print_variable(char name[], uint16_t *var)
 {
   Serial.print(name);
   Serial.print(": 0x");
@@ -101,7 +63,7 @@ void print_variable(char name[], uint32_t *var)
   Serial.println("_2");
 }
 
-void print_compare(uint32_t *var1, uint32_t *var2)
+void print_compare(uint32_t *var1, uint16_t *var2)
 {
   Serial.print(*var1, BIN);
   Serial.print("\t");

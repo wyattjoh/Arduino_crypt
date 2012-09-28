@@ -5,17 +5,17 @@
 
 typedef struct
 {
-  uint32_t a;
-  uint32_t s;
+  uint16_t a;
+  uint16_t s;
 }
 pri_t;
 
 typedef struct
 {
-  uint32_t p;
-  uint32_t g;
-  uint32_t A;
-  uint32_t B;
+  uint16_t p;
+  uint16_t g;
+  uint16_t A;
+  uint16_t B;
 }
 pub_t;
 
